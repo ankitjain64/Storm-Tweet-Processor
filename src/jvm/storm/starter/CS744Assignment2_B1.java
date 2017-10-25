@@ -1,7 +1,6 @@
 package storm.starter;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -48,7 +47,6 @@ public class CS744Assignment2_B1 {
         } else {
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).globalGrouping(TWEET_COUNT_BOLT);
             config.setMaxTaskParallelism(3);
-            LocalCluster cluster = new LocalCluster();
             try {
                 StormRunner.runTopologyLocally(builder.createTopology(),
                         TOPOLOGY_ONE_NAME, config, 600);
