@@ -41,6 +41,7 @@ public class WordCountBolt extends BaseRichBolt {
                 Integer count = entry.getValue();
                 collector.emit(new Values(currentTime, new WordFrequency(word, count)));
             }
+            wordVsWordCount = new HashMap<>();
         } else {
             String word = (String) input.getValue(0);
             Integer count = wordVsWordCount.get(word);

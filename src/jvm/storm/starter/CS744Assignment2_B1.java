@@ -1,6 +1,7 @@
 package storm.starter;
 
 import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -9,6 +10,7 @@ import org.apache.storm.starter.util.StormRunner;
 import org.apache.storm.topology.TopologyBuilder;
 import storm.starter.cs744.bolt.CountLimiterBolt;
 import storm.starter.cs744.spout.ExtendedTwitterSpout;
+import storm.starter.cs744.util.Constants;
 
 import static storm.starter.cs744.util.Constants.*;
 import static storm.starter.cs744.util.Utils.*;
@@ -33,11 +35,11 @@ public class CS744Assignment2_B1 {
 
         HdfsBolt hdfsBolt = getHdfsBolt(outputPath);
         builder.setSpout(TWITTER_INPUT_SPOUT, twitterSampleSpout);
-
+        CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, isClusterMode);
+        builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
         if (isClusterMode) {
-            // Instantiate the HdfsBolt
-            builder.setBolt(TWEET_COUNT_BOLT, new CountLimiterBolt(maxTweets)).globalGrouping(TWITTER_INPUT_SPOUT);
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).shuffleGrouping(TWEET_COUNT_BOLT);
+            // Instantiate the HdfsBolt
             config.setNumWorkers(20);
             config.setMaxSpoutPending(5000);
             try {
@@ -49,8 +51,10 @@ public class CS744Assignment2_B1 {
         } else {
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).globalGrouping(TWITTER_INPUT_SPOUT);
             try {
-                StormRunner.runTopologyLocally(builder.createTopology(),
-                        TOPOLOGY_ONE_NAME, config, 1000000);
+                LocalCluster cluster = new LocalCluster();
+                cluster.submitTopology(Constants.TOPOLOGY_ONE_NAME, config, builder.createTopology());
+                Thread.sleep(600 * 1000);
+                System.out.println("Awake from sleep");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

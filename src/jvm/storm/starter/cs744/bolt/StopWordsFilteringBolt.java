@@ -35,6 +35,7 @@ public class StopWordsFilteringBolt extends BaseRichBolt {
         for (String word : words) {
 //            word = word.replaceAll("[^a-zA-Z0-9\\-]", "");
             word = word.toLowerCase();
+            //To match against stop words
             word = word.replaceAll("#", "");
             if (allowWord(word)) {
                 collector.emit(new Values(word));
@@ -43,8 +44,7 @@ public class StopWordsFilteringBolt extends BaseRichBolt {
     }
 
     private boolean allowWord(String word) {
-        return !stopWords.contains(word) && !word.startsWith("http")
-                && word.matches(".*[a-zA-Z]+.*");
+        return !stopWords.contains(word);
     }
 
     @Override

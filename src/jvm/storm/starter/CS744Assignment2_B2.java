@@ -48,12 +48,14 @@ public class CS744Assignment2_B2 {
 
         buildTopology(builder, twitterSampleSpout, popularWordBolt, tweetsBolt, sampledHashTagsSpout, numberSpout, stopWordBolt);
         Config config = new Config();
+        int timeToRunTopologyInSeconds = 600;
+        int timeToRunTopologyInMillis = timeToRunTopologyInSeconds * 1000;
         if (isClusterMode) {
             try {
                 config.setNumWorkers(20);
                 config.setMaxSpoutPending(5000);
                 StormRunner.runTopologyRemotely(builder.createTopology(), TOPOLOGY_TWO_NAME, config);
-                Thread.sleep(1000000);
+                Thread.sleep(timeToRunTopologyInMillis);
                 Map stormConfigMap = Utils.readStormConfig();
                 Nimbus.Client nimbusClient = NimbusClient.getConfiguredClient(stormConfigMap).getClient();
                 nimbusClient.killTopology(TOPOLOGY_TWO_NAME);
@@ -62,7 +64,7 @@ public class CS744Assignment2_B2 {
             }
         } else {
             try {
-                StormRunner.runTopologyLocally(builder.createTopology(), TOPOLOGY_TWO_NAME, config, 1000000);
+                StormRunner.runTopologyLocally(builder.createTopology(), TOPOLOGY_TWO_NAME, config, timeToRunTopologyInSeconds);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -76,12 +78,12 @@ public class CS744Assignment2_B2 {
         builder.setSpout(SAMPLED_HASHTAGS_SPOUT, sampledHashTagsSpout);
         builder.setSpout(NUMBER_SPOUT, numberSpout);
         builder.setBolt(NUMBER_FILTERING_BOLT, new NumberFilteringBolt()).allGrouping(NUMBER_SPOUT).shuffleGrouping(TWITTER_INPUT_SPOUT);
-        builder.setBolt(HASHTAGS_FILTERING_BOLT, new HashTagsFilteringBolt()).shuffleGrouping(SAMPLED_HASHTAGS_SPOUT).allGrouping(NUMBER_FILTERING_BOLT);
+        builder.setBolt(HASHTAGS_FILTERING_BOLT, new HashTagsFilteringBolt()).allGrouping(SAMPLED_HASHTAGS_SPOUT).shuffleGrouping(NUMBER_FILTERING_BOLT);
         builder.setBolt(STOPWORDS_FILTERING_BOLT, stopWordBolt).shuffleGrouping(HASHTAGS_FILTERING_BOLT);
         Fields wordFields = new Fields(Constants.TWEET_WORD_FIELD);
         builder.setBolt(WORD_COUNT_BOLT, new WordCountBolt()).fieldsGrouping(STOPWORDS_FILTERING_BOLT, wordFields);
         builder.setBolt(POPULAR_WORDS_BOLT, new PopularWordsBolt()).globalGrouping(WORD_COUNT_BOLT);
-        builder.setBolt(HDFS_OUTPUT_BOLT + "_POPULAR", popularWordBolt).shuffleGrouping(POPULAR_WORDS_BOLT);
+        builder.setBolt(HDFS_OUTPUT_BOLT + "_POPULAR", popularWordBolt).globalGrouping(POPULAR_WORDS_BOLT);
         builder.setBolt(HDFS_OUTPUT_BOLT + "_TWEETS", tweetsBolt).globalGrouping(HASHTAGS_FILTERING_BOLT);
     }
 }

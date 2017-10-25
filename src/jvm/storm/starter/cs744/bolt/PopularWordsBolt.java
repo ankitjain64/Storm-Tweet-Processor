@@ -49,7 +49,7 @@ public class PopularWordsBolt extends BaseRichBolt {
 
                 for (int i = currentBatch.size() - 1; i > (currentBatch.size() / 2); i--) {
                     WordFrequency entry = currentBatch.get(i);
-                    sb.append(entry.getWord()).append("_").append(entry.getFrequency()).append("-:-");
+                    sb.append(entry.getWord()).append("_").append(entry.getFrequency()).append(",");
 
                 }
                 collector.emit(new Values(sb.toString()));

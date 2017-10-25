@@ -1,5 +1,6 @@
 package storm.starter.cs744.bolt;
 
+import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -24,11 +25,13 @@ import static storm.starter.cs744.util.Utils.getSanitizedStringValue;
  */
 public class CountLimiterBolt extends BaseRichBolt {
     private int maxCount;
+    private boolean isClusterMode;
     private int currentCount;
     private OutputCollector outputCollector;
 
-    public CountLimiterBolt(int maxCount) {
+    public CountLimiterBolt(int maxCount, boolean isClusterMode) {
         this.maxCount = maxCount;
+        this.isClusterMode = isClusterMode;
         this.currentCount = 0;
     }
 
@@ -44,14 +47,22 @@ public class CountLimiterBolt extends BaseRichBolt {
         Values outputTuple = new Values(getSanitizedStringValue(inputStatus));
         outputCollector.emit(outputTuple);
         if (this.currentCount == this.maxCount) {
-            //stop the topology
-            Map stormConfigMap = Utils.readStormConfig();
-            Nimbus.Client nimbusClient = NimbusClient.getConfiguredClient(stormConfigMap).getClient();
-            try {
-                nimbusClient.killTopology(Constants.TOPOLOGY_ONE_NAME);
-            } catch (TException e) {
-                e.printStackTrace();
+            if (!isClusterMode) {
+                System.out.println("Reached Max Count Locally");
+                LocalCluster localCluster = new LocalCluster();
+                localCluster.killTopology(Constants.TOPOLOGY_ONE_NAME);
+                localCluster.shutdown();
+            } else {
+                //stop the topology
+                Map stormConfigMap = Utils.readStormConfig();
+                Nimbus.Client nimbusClient = NimbusClient.getConfiguredClient(stormConfigMap).getClient();
+                try {
+                    nimbusClient.killTopology(Constants.TOPOLOGY_ONE_NAME);
+                } catch (TException e) {
+                    e.printStackTrace();
+                }
             }
+
         }
 
     }

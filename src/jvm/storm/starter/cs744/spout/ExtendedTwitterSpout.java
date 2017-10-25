@@ -93,6 +93,7 @@ public class ExtendedTwitterSpout extends BaseRichSpout {
         if (keyWords.length == 0) {
             _twitterStream.sample(EN_LANGUAGE);
         } else {
+            //or on track keywords as per api definition
             FilterQuery query = new FilterQuery().track(keyWords).language(EN_LANGUAGE);
             _twitterStream.filter(query);
         }
