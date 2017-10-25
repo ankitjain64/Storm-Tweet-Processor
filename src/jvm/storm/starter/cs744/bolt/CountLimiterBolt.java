@@ -1,6 +1,5 @@
 package storm.starter.cs744.bolt;
 
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -17,6 +16,7 @@ import twitter4j.Status;
 
 import java.util.Map;
 
+import static storm.starter.cs744.util.Constants.TOPOLOGY_ONE_NAME;
 import static storm.starter.cs744.util.Utils.getSanitizedStringValue;
 
 /**
@@ -28,18 +28,11 @@ public class CountLimiterBolt extends BaseRichBolt {
     private boolean isClusterMode;
     private int currentCount;
     private OutputCollector outputCollector;
-    private transient LocalCluster localCluster;
 
     public CountLimiterBolt(int maxCount, boolean isClusterMode) {
         this.maxCount = maxCount;
         this.isClusterMode = isClusterMode;
         this.currentCount = 0;
-    }
-
-    public CountLimiterBolt(int maxCount, LocalCluster localCluster) {
-        this.maxCount = maxCount;
-        this.localCluster = localCluster;
-        this.isClusterMode = false;
     }
 
     @Override
@@ -52,23 +45,21 @@ public class CountLimiterBolt extends BaseRichBolt {
         this.currentCount++;
         Status inputStatus = (Status) tuple.getValue(0);
         Values outputTuple = new Values(getSanitizedStringValue(inputStatus));
-        outputCollector.emit(outputTuple);
+        if (currentCount <= maxCount) {
+            //to handle in local topology
+            outputCollector.emit(outputTuple);
+        }
         if (this.currentCount == this.maxCount) {
-            if (!isClusterMode) {
-                System.out.println("Reached Max Count Locally");
-                localCluster.killTopology(Constants.TOPOLOGY_ONE_NAME);
-                localCluster.shutdown();
-            } else {
+            if (isClusterMode) {
                 //stop the topology
                 Map stormConfigMap = Utils.readStormConfig();
                 Nimbus.Client nimbusClient = NimbusClient.getConfiguredClient(stormConfigMap).getClient();
                 try {
-                    nimbusClient.killTopology(Constants.TOPOLOGY_ONE_NAME);
+                    nimbusClient.killTopology(TOPOLOGY_ONE_NAME);
                 } catch (TException e) {
                     e.printStackTrace();
                 }
             }
-
         }
 
     }
