@@ -28,11 +28,18 @@ public class CountLimiterBolt extends BaseRichBolt {
     private boolean isClusterMode;
     private int currentCount;
     private OutputCollector outputCollector;
+    private transient LocalCluster localCluster;
 
     public CountLimiterBolt(int maxCount, boolean isClusterMode) {
         this.maxCount = maxCount;
         this.isClusterMode = isClusterMode;
         this.currentCount = 0;
+    }
+
+    public CountLimiterBolt(int maxCount, LocalCluster localCluster) {
+        this.maxCount = maxCount;
+        this.localCluster = localCluster;
+        this.isClusterMode = false;
     }
 
     @Override
@@ -49,7 +56,6 @@ public class CountLimiterBolt extends BaseRichBolt {
         if (this.currentCount == this.maxCount) {
             if (!isClusterMode) {
                 System.out.println("Reached Max Count Locally");
-                LocalCluster localCluster = new LocalCluster();
                 localCluster.killTopology(Constants.TOPOLOGY_ONE_NAME);
                 localCluster.shutdown();
             } else {

@@ -35,9 +35,9 @@ public class CS744Assignment2_B1 {
 
         HdfsBolt hdfsBolt = getHdfsBolt(outputPath);
         builder.setSpout(TWITTER_INPUT_SPOUT, twitterSampleSpout);
-        CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, isClusterMode);
-        builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
         if (isClusterMode) {
+            CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, true);
+            builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).shuffleGrouping(TWEET_COUNT_BOLT);
             // Instantiate the HdfsBolt
             config.setNumWorkers(20);
@@ -49,9 +49,11 @@ public class CS744Assignment2_B1 {
                 e.printStackTrace();
             }
         } else {
+            LocalCluster cluster = new LocalCluster();
+            CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, cluster);
+            builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).globalGrouping(TWITTER_INPUT_SPOUT);
             try {
-                LocalCluster cluster = new LocalCluster();
                 cluster.submitTopology(Constants.TOPOLOGY_ONE_NAME, config, builder.createTopology());
                 Thread.sleep(600 * 1000);
                 System.out.println("Awake from sleep");
