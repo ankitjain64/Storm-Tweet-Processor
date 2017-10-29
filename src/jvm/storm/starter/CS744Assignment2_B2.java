@@ -42,11 +42,12 @@ public class CS744Assignment2_B2 {
                 consumerSecret, accessToken, accessTokenSecret, keyWordsArr);
         HdfsBolt popularWordBolt = getHdfsBolt(outputPathPrefix + "/B_popularWords");
         HdfsBolt tweetsBolt = getHdfsBolt(outputPathPrefix + "/B_tweets_data");
-        SampledHashTagsSpout sampledHashTagsSpout = new SampledHashTagsSpout(hashTags, 20);
+        SampledHashTagsSpout sampledHashTagsSpout = new SampledHashTagsSpout(hashTags, 30);
         NumbersSpout numberSpout = new NumbersSpout(numbersArr);
         StopWordsFilteringBolt stopWordBolt = new StopWordsFilteringBolt(stopWordsArr);
 
-        buildTopology(builder, twitterSampleSpout, popularWordBolt, tweetsBolt, sampledHashTagsSpout, numberSpout, stopWordBolt);
+        buildTopology(builder, twitterSampleSpout, popularWordBolt,
+                tweetsBolt, sampledHashTagsSpout, numberSpout, stopWordBolt, outputPathPrefix);
         Config config = new Config();
         int timeToRunTopologyInSeconds = 600;
         int timeToRunTopologyInMillis = timeToRunTopologyInSeconds * 1000;
@@ -73,11 +74,11 @@ public class CS744Assignment2_B2 {
 
     }
 
-    private static void buildTopology(TopologyBuilder builder, ExtendedTwitterSpout twitterSpout, HdfsBolt popularWordBolt, HdfsBolt tweetsBolt, SampledHashTagsSpout sampledHashTagsSpout, NumbersSpout numberSpout, StopWordsFilteringBolt stopWordBolt) {
+    private static void buildTopology(TopologyBuilder builder, ExtendedTwitterSpout twitterSpout, HdfsBolt popularWordBolt, HdfsBolt tweetsBolt, SampledHashTagsSpout sampledHashTagsSpout, NumbersSpout numberSpout, StopWordsFilteringBolt stopWordBolt, String outputPathPrefix) {
         builder.setSpout(TWITTER_INPUT_SPOUT, twitterSpout);
         builder.setSpout(SAMPLED_HASHTAGS_SPOUT, sampledHashTagsSpout);
         builder.setSpout(NUMBER_SPOUT, numberSpout);
-        builder.setBolt(NUMBER_FILTERING_BOLT, new NumberFilteringBolt()).allGrouping(NUMBER_SPOUT).shuffleGrouping(TWITTER_INPUT_SPOUT);
+        builder.setBolt(NUMBER_FILTERING_BOLT, new FriendFilteringBolt()).allGrouping(NUMBER_SPOUT).shuffleGrouping(TWITTER_INPUT_SPOUT);
         builder.setBolt(HASHTAGS_FILTERING_BOLT, new HashTagsFilteringBolt()).allGrouping(SAMPLED_HASHTAGS_SPOUT).shuffleGrouping(NUMBER_FILTERING_BOLT);
         builder.setBolt(STOPWORDS_FILTERING_BOLT, stopWordBolt).shuffleGrouping(HASHTAGS_FILTERING_BOLT);
         Fields wordFields = new Fields(Constants.TWEET_WORD_FIELD);
@@ -85,5 +86,6 @@ public class CS744Assignment2_B2 {
         builder.setBolt(POPULAR_WORDS_BOLT, new PopularWordsBolt()).globalGrouping(WORD_COUNT_BOLT);
         builder.setBolt(HDFS_OUTPUT_BOLT + "_POPULAR", popularWordBolt).globalGrouping(POPULAR_WORDS_BOLT);
         builder.setBolt(HDFS_OUTPUT_BOLT + "_TWEETS", tweetsBolt).globalGrouping(HASHTAGS_FILTERING_BOLT);
+        builder.setBolt("test", getHdfsBolt(outputPathPrefix + "/tweet_test")).shuffleGrouping(TWITTER_INPUT_SPOUT);
     }
 }

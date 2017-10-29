@@ -20,7 +20,7 @@ public class StopWordsFilteringBolt extends BaseRichBolt {
     public StopWordsFilteringBolt(String[] stopWordsArr) {
         this.stopWords = new HashSet<>();
         for (String s : stopWordsArr) {
-            stopWords.add(s.toLowerCase());
+            stopWords.add(s.toLowerCase().trim());
         }
     }
 
@@ -33,10 +33,11 @@ public class StopWordsFilteringBolt extends BaseRichBolt {
     public void execute(Tuple input) {
         String[] words = ((String) input.getValue(0)).split("\\s+");
         for (String word : words) {
-//            word = word.replaceAll("[^a-zA-Z0-9\\-]", "");
+            word = word.replaceAll("[^a-zA-Z0-9\\-]", "");
             word = word.toLowerCase();
-            //To match against stop words
+            //To match against stop words remove any hash
             word = word.replaceAll("#", "");
+            word = word.trim();
             if (allowWord(word)) {
                 collector.emit(new Values(word));
             }

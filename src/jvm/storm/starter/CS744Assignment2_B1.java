@@ -1,6 +1,7 @@
 package storm.starter;
 
 import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
@@ -33,9 +34,9 @@ public class CS744Assignment2_B1 {
 
         HdfsBolt hdfsBolt = getHdfsBolt(outputPath);
         builder.setSpout(TWITTER_INPUT_SPOUT, twitterSampleSpout);
-        CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, isClusterMode);
-        builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
         if (isClusterMode) {
+            CountLimiterBolt bolt = new CountLimiterBolt(maxTweets);
+            builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).shuffleGrouping(TWEET_COUNT_BOLT);
             config.setNumWorkers(20);
             config.setMaxSpoutPending(5000);
@@ -45,14 +46,12 @@ public class CS744Assignment2_B1 {
                 e.printStackTrace();
             }
         } else {
-            builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).globalGrouping(TWEET_COUNT_BOLT);
+            LocalCluster cluster = new LocalCluster();
+            CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, cluster);
+            builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
             config.setMaxTaskParallelism(3);
-            try {
-                StormRunner.runTopologyLocally(builder.createTopology(),
-                        TOPOLOGY_ONE_NAME, config, 600);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            cluster.submitTopology(TOPOLOGY_ONE_NAME, config, builder
+                    .createTopology());
         }
     }
 }

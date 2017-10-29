@@ -9,6 +9,7 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import storm.starter.cs744.util.Constants;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,7 +28,19 @@ public class SampledHashTagsSpout extends BaseRichSpout {
 
     public SampledHashTagsSpout(String[] hashTags, int sampleCount) {
         super();
-        this.hashTags = hashTags;
+        int i = 0;
+        Set<String> hashTagsSet = new HashSet<>();
+        //Remove Hash
+        for (String hashTag : hashTags) {
+            hashTagsSet.add(hashTag.substring(1).trim());
+            i++;
+        }
+        this.hashTags = new String[hashTagsSet.size()];
+        i = 0;
+        for (String hashTag : hashTagsSet) {
+            this.hashTags[i] = hashTag;
+            i++;
+        }
         this.sampleCount = sampleCount;
     }
 

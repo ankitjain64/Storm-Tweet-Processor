@@ -97,8 +97,7 @@ public class Utils {
         return new Date().getTime();
     }
 
-    public static <T> Set<T> doSample(long seed, int sampleCount, T[]
-            toBeSampled) {
+    public static <T> Set<T> doSample(long seed, int sampleCount, T[] toBeSampled) {
         if (toBeSampled == null) {
             return null;
         }

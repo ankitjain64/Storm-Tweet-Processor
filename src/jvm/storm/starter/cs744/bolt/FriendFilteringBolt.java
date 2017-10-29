@@ -17,7 +17,7 @@ import java.util.Map;
 
 import static storm.starter.cs744.util.Constants.TWEET_FIELD;
 
-public class NumberFilteringBolt extends BaseRichBolt {
+public class FriendFilteringBolt extends BaseRichBolt {
     private OutputCollector collector;
     private Integer sampledNumber;
     private List<Status> tweetStatusList;

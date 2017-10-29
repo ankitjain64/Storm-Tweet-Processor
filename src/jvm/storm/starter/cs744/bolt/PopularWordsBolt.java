@@ -35,10 +35,12 @@ public class PopularWordsBolt extends BaseRichBolt {
             currentTimeStamp = ts;
             currentBatch.add(frequency);
         } else {
-            //Can result in a skew
-            if (Long.compare(ts, currentTimeStamp) != 0) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(currentTimeStamp).append(",");
+            int delta = 5000; //to handle clock skew ts+delta and ts-delta since
+            // word filter had a tick of 30s, 5000 ms is a reasonable delta
+            if (Long.compare(ts + delta, currentTimeStamp) >= 0 && Long.compare
+                    (ts - delta, currentTimeStamp) <= 0) {
+                currentBatch.add(frequency);
+            } else {
                 Collections.sort(currentBatch, new Comparator<WordFrequency>() {
                     @Override
                     public int compare(WordFrequency o1, WordFrequency o2) {
@@ -46,17 +48,15 @@ public class PopularWordsBolt extends BaseRichBolt {
                     }
                 });
 
-
-                for (int i = currentBatch.size() - 1; i > (currentBatch.size() / 2); i--) {
+                StringBuilder sb;
+                for (int i = currentBatch.size() - 1; i >= (currentBatch.size() / 2); i--) {
+                    sb = new StringBuilder().append(currentTimeStamp).append(",");
                     WordFrequency entry = currentBatch.get(i);
-                    sb.append(entry.getWord()).append("_").append(entry.getFrequency()).append(",");
-
+                    sb.append(entry.getWord()).append(",").append(entry.getFrequency());
+                    collector.emit(new Values(sb.toString()));
                 }
-                collector.emit(new Values(sb.toString()));
                 currentTimeStamp = ts;
                 currentBatch = new ArrayList<>();
-                currentBatch.add(frequency);
-            } else {
                 currentBatch.add(frequency);
             }
         }

@@ -1,5 +1,6 @@
 package storm.starter.cs744.bolt;
 
+import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -25,13 +26,21 @@ import static storm.starter.cs744.util.Utils.getSanitizedStringValue;
  */
 public class CountLimiterBolt extends BaseRichBolt {
     private int maxCount;
+    private transient LocalCluster localCluster;
     private boolean isClusterMode;
     private int currentCount;
     private OutputCollector outputCollector;
 
-    public CountLimiterBolt(int maxCount, boolean isClusterMode) {
+    public CountLimiterBolt(int maxCount) {
         this.maxCount = maxCount;
-        this.isClusterMode = isClusterMode;
+        this.isClusterMode = true;
+        this.currentCount = 0;
+    }
+
+    public CountLimiterBolt(int maxCount, LocalCluster localCluster) {
+        this.maxCount = maxCount;
+        this.localCluster = localCluster;
+        this.isClusterMode = false;
         this.currentCount = 0;
     }
 
@@ -59,6 +68,8 @@ public class CountLimiterBolt extends BaseRichBolt {
                 } catch (TException e) {
                     e.printStackTrace();
                 }
+            } else {
+                localCluster.killTopology(TOPOLOGY_ONE_NAME);
             }
         }
 

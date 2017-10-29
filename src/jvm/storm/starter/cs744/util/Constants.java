@@ -3,7 +3,7 @@ package storm.starter.cs744.util;
 public class Constants {
     //Configs
     public static final String HDFS_URI = "hdfs://10.254.0.14:8020";
-    public static final int WORD_COUNT_EMIT_FREQUENCY = 30 * 1000;
+    public static final int WORD_COUNT_EMIT_FREQUENCY = 30;
     public static final int SAMPLED_DATA_EMIT_FREQUENCY = 10 * 1000;
 
     //TOPOLOGY NAME CONSTANT
