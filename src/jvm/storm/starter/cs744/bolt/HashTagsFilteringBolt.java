@@ -41,7 +41,7 @@ public class HashTagsFilteringBolt extends BaseRichBolt {
         } else {
             assert Constants.SAMPLED_HASHTAGS_SPOUT.equals(input.getSourceComponent());
             //noinspection unchecked
-            hashTags = (Set<String>) input.getValue(0);
+            hashTags = new HashSet<>((List<String>) input.getValue(0));
             if (!tweets.isEmpty()) {
                 for (Status status : tweets) {
                     emitOrIgnoreStatus(status);
@@ -53,11 +53,13 @@ public class HashTagsFilteringBolt extends BaseRichBolt {
 
     private void emitOrIgnoreStatus(Status tweet) {
         HashtagEntity[] hashtagEntities = tweet.getHashtagEntities();
-        for (HashtagEntity hashtagEntity : hashtagEntities) {
-            String hashTagText = hashtagEntity.getText();
-            if (hashTags.contains(hashTagText)) {
-                collector.emit(new Values(Utils.getSanitizedStringValue(tweet)));
-                break;
+        if (hashtagEntities != null) {
+            for (HashtagEntity hashtagEntity : hashtagEntities) {
+                String hashTagText = hashtagEntity.getText().toLowerCase();
+                if (hashTags.contains(hashTagText)) {
+                    collector.emit(new Values(Utils.getSanitizedStringValue(tweet)));
+                    break;
+                }
             }
         }
     }

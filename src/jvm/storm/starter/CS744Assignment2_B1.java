@@ -36,7 +36,7 @@ public class CS744Assignment2_B1 {
         builder.setSpout(TWITTER_INPUT_SPOUT, twitterSampleSpout);
         if (isClusterMode) {
             CountLimiterBolt bolt = new CountLimiterBolt(maxTweets);
-            builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
+            builder.setBolt(TWEET_COUNT_BOLT, bolt, 1).globalGrouping(TWITTER_INPUT_SPOUT);
             builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).shuffleGrouping(TWEET_COUNT_BOLT);
             config.setNumWorkers(20);
             config.setMaxSpoutPending(5000);
@@ -46,12 +46,13 @@ public class CS744Assignment2_B1 {
                 e.printStackTrace();
             }
         } else {
+            config.setDebug(true);
             LocalCluster cluster = new LocalCluster();
             CountLimiterBolt bolt = new CountLimiterBolt(maxTweets, cluster);
             builder.setBolt(TWEET_COUNT_BOLT, bolt).globalGrouping(TWITTER_INPUT_SPOUT);
+            builder.setBolt(HDFS_OUTPUT_BOLT, hdfsBolt).shuffleGrouping(TWEET_COUNT_BOLT);
             config.setMaxTaskParallelism(3);
-            cluster.submitTopology(TOPOLOGY_ONE_NAME, config, builder
-                    .createTopology());
+            cluster.submitTopology(TOPOLOGY_ONE_NAME, config, builder.createTopology());
         }
     }
 }

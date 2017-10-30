@@ -22,7 +22,7 @@ public class Utils {
     public static HdfsBolt getHdfsBolt(String outputPath) {
         DelimitedRecordFormat delimitedRecordFormat = new
                 DelimitedRecordFormat().withFieldDelimiter(DELIMETER);
-        CountSyncPolicy countSyncPolicy = new CountSyncPolicy(1000);
+        CountSyncPolicy countSyncPolicy = new CountSyncPolicy(10);
         FileSizeRotationPolicy fileSizeRotationPolicy = new FileSizeRotationPolicy(5f, FileSizeRotationPolicy.Units.MB);
         FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(outputPath);
         return new HdfsBolt()
@@ -97,18 +97,18 @@ public class Utils {
         return new Date().getTime();
     }
 
-    public static <T> Set<T> doSample(long seed, int sampleCount, T[] toBeSampled) {
+    public static <T> List<T> doSample(long seed, int sampleCount, T[] toBeSampled) {
         if (toBeSampled == null) {
             return null;
         }
-        Set<T> rv = new HashSet<>();
-        Random random = new Random(seed);
-        Set<Integer> indexSet = new HashSet<>();
-        while (indexSet.size() != sampleCount) {
-            indexSet.add(random.nextInt(toBeSampled.length));
+        List<T> toBeSampledList = Arrays.asList(toBeSampled);
+        if (sampleCount == toBeSampled.length) {
+            return toBeSampledList;
         }
-        for (Integer index : indexSet) {
-            rv.add(toBeSampled[index]);
+        Collections.shuffle(toBeSampledList, new Random(seed));
+        List<T> rv = new ArrayList<>();
+        for (int i = 0; i < sampleCount; i++) {
+            rv.add(toBeSampledList.get(i));
         }
         return rv;
     }

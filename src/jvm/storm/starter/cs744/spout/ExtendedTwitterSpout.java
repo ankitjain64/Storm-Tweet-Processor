@@ -21,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class ExtendedTwitterSpout extends BaseRichSpout {
 
-    public static final String EN_LANGUAGE = "en";
+    private static final String EN_LANGUAGE = "en";
     private SpoutOutputCollector _collector;
     private LinkedBlockingQueue<Status> queue = null;
     private TwitterStream _twitterStream;
@@ -47,7 +47,7 @@ public class ExtendedTwitterSpout extends BaseRichSpout {
     @Override
     public void open(Map conf, TopologyContext context,
                      SpoutOutputCollector collector) {
-        queue = new LinkedBlockingQueue<Status>(1000);
+        queue = new LinkedBlockingQueue<>(1000);
         _collector = collector;
 
         StatusListener listener = new StatusListener() {

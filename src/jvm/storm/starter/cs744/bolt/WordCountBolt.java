@@ -23,7 +23,7 @@ import static storm.starter.cs744.util.Utils.isTickTuple;
  */
 public class WordCountBolt extends BaseRichBolt {
     private OutputCollector collector;
-    private Map<String, Integer> wordVsWordCount;
+    private Map<String, Long> wordVsWordCount;
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -36,17 +36,17 @@ public class WordCountBolt extends BaseRichBolt {
         if (isTickTuple(input)) {
             //append correct time
             long currentTime = Utils.getCurrentTime();
-            for (Map.Entry<String, Integer> entry : wordVsWordCount.entrySet()) {
+            for (Map.Entry<String, Long> entry : wordVsWordCount.entrySet()) {
                 String word = entry.getKey();
-                Integer count = entry.getValue();
-                collector.emit(new Values(currentTime, new WordFrequency(word, count)));
+                Long count = entry.getValue();
+                collector.emit(new Values(new WordFrequency(word, count)));
             }
             wordVsWordCount = new HashMap<>();
         } else {
             String word = (String) input.getValue(0);
-            Integer count = wordVsWordCount.get(word);
+            Long count = wordVsWordCount.get(word);
             if (count == null) {
-                count = 0;
+                count = 0L;
             }
             count++;
             wordVsWordCount.put(word, count);
@@ -55,7 +55,7 @@ public class WordCountBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields(TS_FIELD, WORD_FREQUENCY_FIELD));
+        declarer.declare(new Fields(WORD_FREQUENCY_FIELD));
     }
 
     @Override

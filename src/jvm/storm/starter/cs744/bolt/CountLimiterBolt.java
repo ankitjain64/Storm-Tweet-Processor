@@ -26,15 +26,21 @@ import static storm.starter.cs744.util.Utils.getSanitizedStringValue;
  */
 public class CountLimiterBolt extends BaseRichBolt {
     private int maxCount;
+    //Need to make local cluster transient as it is not serializable
+    //And we will not require it in cluster mode and in local mode it is
+    // already available on the node(no serialization & deserialization of the
+    // object)
     private transient LocalCluster localCluster;
     private boolean isClusterMode;
     private int currentCount;
     private OutputCollector outputCollector;
+    private long sleepMillisBeforeKilling;
 
     public CountLimiterBolt(int maxCount) {
         this.maxCount = maxCount;
         this.isClusterMode = true;
         this.currentCount = 0;
+        this.sleepMillisBeforeKilling = 5000;
     }
 
     public CountLimiterBolt(int maxCount, LocalCluster localCluster) {
@@ -42,6 +48,7 @@ public class CountLimiterBolt extends BaseRichBolt {
         this.localCluster = localCluster;
         this.isClusterMode = false;
         this.currentCount = 0;
+        this.sleepMillisBeforeKilling = 5000;
     }
 
     @Override
@@ -59,6 +66,7 @@ public class CountLimiterBolt extends BaseRichBolt {
             outputCollector.emit(outputTuple);
         }
         if (this.currentCount == this.maxCount) {
+            Utils.sleep(this.sleepMillisBeforeKilling);
             if (isClusterMode) {
                 //stop the topology
                 Map stormConfigMap = Utils.readStormConfig();
@@ -69,6 +77,7 @@ public class CountLimiterBolt extends BaseRichBolt {
                     e.printStackTrace();
                 }
             } else {
+                //sleep 5 sec before killing the topology
                 localCluster.killTopology(TOPOLOGY_ONE_NAME);
             }
         }

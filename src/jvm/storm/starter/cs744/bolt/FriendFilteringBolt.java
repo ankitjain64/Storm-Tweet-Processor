@@ -48,6 +48,7 @@ public class FriendFilteringBolt extends BaseRichBolt {
             }
             this.tweetStatusList = new ArrayList<>();
         }
+        collector.ack(input);
     }
 
     private void emitOrIgnore(Status status) {

@@ -33,10 +33,10 @@ public class StopWordsFilteringBolt extends BaseRichBolt {
     public void execute(Tuple input) {
         String[] words = ((String) input.getValue(0)).split("\\s+");
         for (String word : words) {
+            //To replace all punctuation marks otherwise same word was coming
+            // in two different formats: bob, and bob
             word = word.replaceAll("[^a-zA-Z0-9\\-]", "");
             word = word.toLowerCase();
-            //To match against stop words remove any hash
-            word = word.replaceAll("#", "");
             word = word.trim();
             if (allowWord(word)) {
                 collector.emit(new Values(word));
